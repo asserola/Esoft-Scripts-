@@ -1,0 +1,113 @@
+import secrets
+import string
+
+# Codes de couleurs ANSI pour la console
+COULEURS = {
+    "ROUGE": "\033[91m",
+    "JAUNE": "\033[93m",
+    "VERT": "\033[92m",
+    "VERT_CLAIR": "\033[96m",
+    "GRAS": "\033[1m",
+    "RESET": "\033[0m",
+}
+
+
+def generer_mot_de_passe(longueur: int = 12) -> tuple[str, str, str]:
+    """Génère un mot de passe sécurisé et retourne sa valeur, son niveau et sa couleur."""
+    if longueur < 4:
+        raise ValueError("La longueur minimale est de 4 caractères.")
+
+    majuscules = string.ascii_uppercase
+    minuscules = string.ascii_lowercase
+    chiffres = string.digits
+    symboles = "!@#$%^&*_-+="
+
+    tous_les_caracteres = majuscules + minuscules + chiffres + symboles
+
+    # 1. Garantie d'au moins un caractère de chaque type
+    mot_de_passe_liste = [
+        secrets.choice(majuscules),
+        secrets.choice(minuscules),
+        secrets.choice(chiffres),
+        secrets.choice(symboles),
+    ]
+
+    # 2. Remplissage du reste
+    mot_de_passe_liste += [
+        secrets.choice(tous_les_caracteres) for _ in range(longueur - 4)
+    ]
+
+    # 3. Mélange sécurisé
+    secrets.SystemRandom().shuffle(mot_de_passe_liste)
+    mot_de_passe = "".join(mot_de_passe_liste)
+
+    # 4. Évaluation avec attribution de couleur
+    niveau, couleur = evaluer_force(mot_de_passe, longueur)
+
+    return mot_de_passe, niveau, couleur
+
+
+def evaluer_force(mot_de_passe: str, longueur: int) -> tuple[str, str]:
+    """Détermine le niveau de force et la couleur associée."""
+    contraintes = [
+        longueur >= 12,
+        longueur >= 16,
+        any(c.isupper() for c in mot_de_passe),
+        any(c.islower() for c in mot_de_passe),
+        any(c.isdigit() for c in mot_de_passe),
+        any(c in "!@#$%^&*_-+=" for c in mot_de_passe),
+    ]
+
+    score = sum(contraintes)
+
+    if score >= 5:
+        return "Très fort", COULEURS["VERT_CLAIR"]
+    elif score >= 4:
+        return "Fort", COULEURS["VERT"]
+    elif score >= 3:
+        return "Moyen", COULEURS["JAUNE"]
+    else:
+        return "Faible", COULEURS["ROUGE"]
+
+
+def executer_generateur():
+    """Gère l'exécution en boucle de l'application."""
+    c_gras = COULEURS["GRAS"]
+    c_reset = COULEURS["RESET"]
+    c_rouge = COULEURS["ROUGE"]
+    #vert = COULEURS["VERT_CLAIR']
+
+    while True:
+        print("\n" + f"{c_gras}{'=' * 50}{c_reset}")
+        print(f"{c_gras}       GÉNÉRATEUR DE MOT DE PASSE SÉCURISÉ{c_reset}")
+        print(f"{c_gras}{'=' * 50}{c_reset}")
+
+        saisie = input(
+            "\nEntrez la longueur (min. 4) [Défaut: 12] ou 'Q' pour quitter : "
+        ).strip()
+
+        # Option de sortie
+        if saisie.lower() == "q":
+            print(f"\n{c_gras}Merci d'avoir utilisé le générateur. À bientôt !{c_reset}")
+            break
+
+        try:
+            longueur = int(saisie) if saisie else 12
+            mot_de_passe, force, couleur_force = generer_mot_de_passe(longueur)
+
+            print("\n" + "-" * 10)
+            print(f" Longueur        : {c_gras}{longueur}{c_reset} caractères")
+            print(f" Mot de passe    : {c_gras}{mot_de_passe}{c_reset}")
+            print(
+                f" Niveau de force : {couleur_force}{c_gras}{force}{c_reset}"
+            )
+            print("-" * 10,)
+
+        except ValueError as e:
+            msg_erreur = str(e) if str(e) else "Veuillez entrer un nombre entier valide."
+            print(f"\n{c_rouge}[Erreur] {msg_erreur}{c_reset}")
+
+
+if __name__ == "__main__":
+    executer_generateur()
+    
